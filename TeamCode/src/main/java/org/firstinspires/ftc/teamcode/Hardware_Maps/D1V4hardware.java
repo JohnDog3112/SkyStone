@@ -73,6 +73,23 @@ public class D1V4hardware extends RobotConstructor {
         upperLimitSwitch = hMap.touchSensor.get("upperlimit");
         lowerLimitSwitch = hMap.touchSensor.get("downlimit");
 
+        //reset all encoders
+        dcFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcFrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcBackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcInOut.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcUpDown.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcOpenClose.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        //set them to run without encoder by default
+        dcFrontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcFrontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcBackLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcBackRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcInOut.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcOpenClose.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         //setup the directions the devices need to operate in
         dcFrontLeft.setDirection(DcMotor.Direction.REVERSE);
         dcBackLeft.setDirection(DcMotor.Direction.REVERSE);
