@@ -22,9 +22,9 @@ public class KissHardware extends RobotConstructor {
     private static double wheelDiameter = 4;
     private static double dKp = 0.05;
     private static double minMoveSpeed = 0.1;
-    private static float CameraForwardDisplacement = (float)6.5;
-    private static float CameraLeftDisplacement = 4;
-    private static float CameraVerticalDisplacement = (float)6.5;
+    public static final float CameraForwardDisplacement = (float)6.5;
+    public static final float CameraLeftDisplacement = 4;
+    public static final float CameraVerticalDisplacement = (float)6.5;
     private static float rampingDistance = 12;
 
     public final double inchesPerTick;
