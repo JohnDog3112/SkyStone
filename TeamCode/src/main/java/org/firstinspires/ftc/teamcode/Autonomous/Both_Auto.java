@@ -1,12 +1,10 @@
-package org.firstinspires.ftc.teamcode.Autonamous;
+package org.firstinspires.ftc.teamcode.Autonomous;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
-import org.firstinspires.ftc.robotcore.external.Func;
 import org.firstinspires.ftc.teamcode.Functions.AutoFunctions;
 import org.firstinspires.ftc.teamcode.Functions.FunctionLibrary;
-import org.firstinspires.ftc.teamcode.Hardware_Maps.D1V4hardware;
 import org.firstinspires.ftc.teamcode.Hardware_Maps.KissHardware;
 
 @Autonomous
