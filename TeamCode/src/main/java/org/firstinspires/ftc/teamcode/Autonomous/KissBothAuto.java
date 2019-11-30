@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
+import android.util.Log;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
@@ -7,9 +10,11 @@ import org.firstinspires.ftc.teamcode.Functions.AutoFunctions;
 import org.firstinspires.ftc.teamcode.Functions.FunctionLibrary;
 import org.firstinspires.ftc.teamcode.Hardware_Maps.KissHardware;
 
+@Autonomous
 public class KissBothAuto extends LinearOpMode {
     private final double dMTFOffset = 7.25;
     private int nSwitch = 0;
+    private static final double mmPerInch = 25.4;
     FunctionLibrary.Point destination = new FunctionLibrary.Point(0,0);
     FunctionLibrary.Point SkystoneTarget = new FunctionLibrary.Point(0,0);
     private double result = 0;
@@ -17,13 +22,15 @@ public class KissBothAuto extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         KissHardware robot = new KissHardware(this);
         AutoFunctions auto = new AutoFunctions(robot);
+        robot.initVuforia(hardwareMap);
         waitForStart();
+        robot.SkystoneTrackables.activate();
         robot.setPosition(-72+dMTFOffset,-12);
         robot.setRotation(90);
         while (opModeIsActive()) {
             switch(nSwitch) {
                 case 0:
-                    destination = new FunctionLibrary.Point(-36-robot.CameraForwardDisplacement,-24-8-robot.CameraLeftDisplacement);
+                    destination = new FunctionLibrary.Point(-36-robot.CameraForwardDisplacement,-24-8+robot.CameraLeftDisplacement);
                     result = auto.gotoPosition(destination, 1, 0.5,90);
                     if (result < 0) {
                         resetStartTime();
@@ -35,7 +42,8 @@ public class KissBothAuto extends LinearOpMode {
                     if(robot.VuMarkPositions.containsKey("Stone Target")) {
                         resetStartTime();
                         VectorF stonePos = robot.VuMarkPositions.get("Stone Target");
-                        SkystoneTarget = new FunctionLibrary.Point(stonePos.get(0),stonePos.get(1));
+                        SkystoneTarget = new FunctionLibrary.Point((-stonePos.get(0)/mmPerInch)+robot.getX(),(stonePos.get(1)/mmPerInch)+robot.getY());
+                        Log.d("BothAutoVuforia", "x: " + SkystoneTarget.x + "y: " + SkystoneTarget.y);
                         nSwitch++;
                     } else if (getRuntime() > 2) {
                         SkystoneTarget = new FunctionLibrary.Point(-24,-48+4);

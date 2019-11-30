@@ -262,7 +262,7 @@ public class AutoFunctions {
             robotRotation = targetAngle360-currentAngle360;
         }
         //pass the x movement, y movement, rotation, and power to the move function in the constructor class
-        robot.move(adjustedX, adjustedY, robotRotation/50, power);
+        robot.move(adjustedX, adjustedY, robotRotation/100, power);
 
         return 0;
     }
