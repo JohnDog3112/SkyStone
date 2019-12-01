@@ -16,11 +16,8 @@ public class D1V4Op extends LinearOpMode {
         waitForStart();
         while (opModeIsActive()) {
             robot.move(gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x, 1);
-            telemetry.addData("left Y", gamepad1.left_stick_y);
-            telemetry.addData("left X", gamepad1.left_stick_x);
-            telemetry.addData("right X", gamepad1.right_stick_x);
-            telemetry.addData("forward power", gamepad1.left_stick_y);
-            telemetry.addData("right power", gamepad1.left_stick_x);
+            telemetry.addData("x: ", robot.getX());
+            telemetry.addData("y: ", robot.getY());
             telemetry.update();
             if (gamepad1.dpad_left) {
                 robot.csRight.setPower(-1);
@@ -33,11 +30,14 @@ public class D1V4Op extends LinearOpMode {
                 robot.csLeft.setPower(0);
             }
             if (gamepad1.dpad_up && !robot.upperLimitSwitch.isPressed()) {
-                robot.dcUpDown.setPower(1);
+                robot.dcUpDown1.setPower(1);
+                robot.dcUpDown2.setPower(1);
             } else if (gamepad1.dpad_down && !robot.lowerLimitSwitch.isPressed()) {
-                robot.dcUpDown.setPower(-1);
+                robot.dcUpDown1.setPower(-1);
+                robot.dcUpDown2.setPower(-1);
             } else {
-                robot.dcUpDown.setPower(0);
+                robot.dcUpDown1.setPower(0);
+                robot.dcUpDown2.setPower(0);
             }
             robot.dcInOut.setPower(gamepad1.right_trigger-gamepad1.left_trigger);
             if (gamepad1.right_bumper) {
@@ -54,7 +54,7 @@ public class D1V4Op extends LinearOpMode {
                 robot.dcOpenClose.setPower(0);
             }
 
-
+            telemetry.update();
         }
     }
 }

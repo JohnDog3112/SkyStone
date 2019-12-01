@@ -142,7 +142,6 @@ public class AutoConfig {
         if (file.exists()) {
             readFileReturnData fileData = readDataFile(fileName);
             ArrayList<HashMap<String,String>> parsedData = fileData.data;
-            HashMap<HashMap<String,String>, Integer> whatLine = new HashMap<>();
             for (HashMap<String,String> line : data) {
                 if (parsedData.get(Integer.parseInt(line.get(fileData.headers[0]))) != null) parsedData.remove(Integer.parseInt(line.get(fileData.headers[0])));
                 HashMap<String,String> dataLine = new HashMap<>();

@@ -7,9 +7,13 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+import com.qualcomm.robotcore.util.ReadWriteFile;
 
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.firstinspires.ftc.teamcode.Functions.FunctionLibrary;
 import org.firstinspires.ftc.teamcode.Functions.RobotConstructor;
+
+import java.io.File;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.atan2;
@@ -31,17 +35,27 @@ public class D1V4hardware extends RobotConstructor {
     private static float CameraVerticalDisplacement = (float)6.5;
     private static float rampingDistance = 12;
 
+    private final double odometryWheelDiameter = 2;
+    private final double odometryWheelTicksPerRev = 1440;
+
+    private final double odometryWheelCircumfrance = odometryWheelDiameter*Math.PI;
+    private final double odometryInchesPerTick = odometryWheelCircumfrance/odometryWheelTicksPerRev;
 
     public final double inchesPerTick;
+    private final double verticalTicksPerDegree;
+    private final double horizontalTicksPerDegree;
 
     //initialize the variables for the hardware devices
     public final DcMotor dcFrontLeft;
     public final DcMotor dcFrontRight;
     public final DcMotor dcBackLeft;
     public final DcMotor dcBackRight;
-    public final DcMotor dcUpDown;
+    public final DcMotor dcUpDown1;
+    public final DcMotor dcUpDown2;
     public final DcMotor dcInOut;
     public final DcMotor dcOpenClose;
+    public final DcMotor horizontalEncoder;
+    public final DcMotor verticalEncoder;
 
     public final CRServo csRight;
     public final CRServo csLeft;
@@ -58,6 +72,18 @@ public class D1V4hardware extends RobotConstructor {
         super(opMode, wheelDiameter, dKp, minMoveSpeed,rampingDistance, CameraForwardDisplacement, CameraLeftDisplacement, CameraVerticalDisplacement, Webcamname, VuforiaKey);
         //save the hardware map from the opMode
         HardwareMap hMap = opMode.hardwareMap;
+
+        /*
+        File horizontalPerTick = AppUtil.getInstance().getSettingsFile("horizontalTickOffsetPerDegree");
+        horizontalTicksPerDegree = Double.parseDouble(ReadWriteFile.readFile(horizontalPerTick));
+
+        File verticalPerTick = AppUtil.getInstance().getSettingsFile("verticalTickOffsetPerDegree");
+        verticalTicksPerDegree = Double.parseDouble(ReadWriteFile.readFile(verticalPerTick));
+
+
+         */
+        horizontalTicksPerDegree = 0;
+        verticalTicksPerDegree = 0;
         //set the variables to their corresponding hardware device
         dcFrontLeft = hMap.dcMotor.get("frontleft");
         dcFrontRight = hMap.dcMotor.get("frontright");
@@ -65,10 +91,15 @@ public class D1V4hardware extends RobotConstructor {
         dcBackRight = hMap.dcMotor.get("backright");
         dcInOut = hMap.dcMotor.get("inout");
         dcOpenClose = hMap.dcMotor.get("openclose");
-        dcUpDown = hMap.dcMotor.get("updown");
+        dcUpDown1 = hMap.dcMotor.get("updown1");
+        dcUpDown2 = hMap.dcMotor.get("updown2");
         csRight = hMap.crservo.get("sright");
         csLeft = hMap.crservo.get("sleft");
         sHook = hMap.servo.get("shook");
+
+        //subject to change
+        verticalEncoder = dcBackRight;
+        horizontalEncoder = dcBackLeft;
 
         upperLimitSwitch = hMap.touchSensor.get("upperlimit");
         lowerLimitSwitch = hMap.touchSensor.get("downlimit");
@@ -76,7 +107,8 @@ public class D1V4hardware extends RobotConstructor {
         //setup the directions the devices need to operate in
         dcFrontLeft.setDirection(DcMotor.Direction.REVERSE);
         dcBackLeft.setDirection(DcMotor.Direction.REVERSE);
-        dcUpDown.setDirection(DcMotor.Direction.REVERSE);
+        dcUpDown1.setDirection(DcMotor.Direction.REVERSE);
+        dcUpDown2.setDirection(DcMotor.Direction.REVERSE);
 
         //make sure none of the devices are running
         dcFrontLeft.setPower(0);
@@ -84,13 +116,34 @@ public class D1V4hardware extends RobotConstructor {
         dcBackLeft.setPower(0);
         dcBackRight.setPower(0);
         dcOpenClose.setPower(0);
-        dcUpDown.setPower(0);
+        dcUpDown1.setPower(0);
+        dcUpDown2.setPower(0);
         dcInOut.setPower(0);
 
         csRight.setPower(0);
         csLeft.setPower(0);
 
         sHook.setPosition(0);
+
+        //Reset the encoders on every motor
+        dcFrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcBackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcUpDown1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcUpDown2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcInOut.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcOpenClose.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        //set them to run without the encoders by default
+        dcFrontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcFrontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcBackRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcBackLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcUpDown1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcUpDown2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcInOut.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        dcOpenClose.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         //initialize a variable useful in the odometry function
         inchesPerTick = (1/dcFrontLeft.getMotorType().getTicksPerRev())*getWheelCircumfrance();
     }
@@ -99,11 +152,34 @@ public class D1V4hardware extends RobotConstructor {
     private double lastFrontRightPos = 0;
     private double lastBackLeftPos = 0;
     private double lastBackRightPos = 0;
+    private double lastVerticalPos = 0;
+    private double lastHorizontalPos = 0;
+    private double lastGyroAngle = 0;
     //overide the odometry function to make it robot specific
     @Override
     public void updateOdometry() {
         //call the parent's updateOdometry class to update rotation
         super.updateOdometry();
+
+        double currentGyroAngle = getGyroRotation();
+        double rotationalChange = currentGyroAngle-lastGyroAngle;
+
+        double currentVerticalPosition = verticalEncoder.getCurrentPosition();
+        double currentHorizontalPosition = horizontalEncoder.getCurrentPosition();
+
+        double verticalWheelMovement = currentVerticalPosition - lastVerticalPos -(verticalTicksPerDegree*rotationalChange);
+        double horizontalWheelMovement = currentHorizontalPosition - lastHorizontalPos - (horizontalTicksPerDegree*rotationalChange);
+
+        lastGyroAngle = currentGyroAngle;
+        lastVerticalPos = currentVerticalPosition;
+        lastHorizontalPos = currentHorizontalPosition;
+
+        double yOffset = verticalWheelMovement*odometryInchesPerTick;
+        double xOffset = horizontalWheelMovement*odometryInchesPerTick;
+
+
+        /*
+        Old odometry code using inverse kinimatics
         //find the offset from the current encoder positions to the previous ones
         double frontLeftOffset = (dcFrontLeft.getCurrentPosition()- lastFrontLeftPos) * inchesPerTick;
         double frontRightOffset = (dcFrontRight.getCurrentPosition()- lastFrontRightPos) * inchesPerTick;
@@ -119,7 +195,7 @@ public class D1V4hardware extends RobotConstructor {
         //use inverse kinimatics to find the x and y offsets
         double yOffset = -(frontLeftOffset+frontRightOffset+backLeftOffset+backRightOffset)/4;
         double xOffset = (-frontLeftOffset + frontRightOffset + backLeftOffset - backRightOffset)/4;
-
+        */
         //find the straight line distance from the last position
         double hypot = sqrt(pow(xOffset,2) + pow(yOffset,2));
 
@@ -132,6 +208,8 @@ public class D1V4hardware extends RobotConstructor {
         double deltaX = hypot*cos(Math.toRadians(adjustedAngle));
         //set deltaY to the distance moved times sin of the found angle
         double deltaY = hypot*sin(Math.toRadians(adjustedAngle));
+
+
 
         //add the x and y offsets to the global x and y positions
         addDeviation(new FunctionLibrary.Point(deltaX, deltaY));

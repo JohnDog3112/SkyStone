@@ -240,4 +240,5 @@ public class RobotConstructor {
     public double getRotationOffset() {
         return rotationOffset;
     }
+    public double getGyroRotation() { return gyroRotation; }
 }
