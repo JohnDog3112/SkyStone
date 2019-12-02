@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.Hardware_Maps;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
@@ -110,7 +109,8 @@ public class D1V4hardware extends RobotConstructor {
         dcBackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         dcBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         dcInOut.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        dcUpDown.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcUpDown1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        dcUpDown2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         dcOpenClose.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         //set them to run without encoder by default
@@ -195,7 +195,7 @@ public class D1V4hardware extends RobotConstructor {
 
         double verticalWheelMovement = currentVerticalPosition - lastVerticalPos +(verticalTicksPerDegree*rotationalChange);
         double horizontalWheelMovement = currentHorizontalPosition - lastHorizontalPos - (horizontalTicksPerDegree*rotationalChange);
-
+        horizontalWheelMovement *= -1;
         lastGyroAngle = currentGyroAngle;
         lastVerticalPos = currentVerticalPosition;
         lastHorizontalPos = currentHorizontalPosition;
@@ -231,7 +231,7 @@ public class D1V4hardware extends RobotConstructor {
         double adjustedAngle = angle - getWorldRotation();
 
         //set deltaX to the distance moved times cosine of the found angle
-        double deltaX = -hypot*cos(Math.toRadians(adjustedAngle));
+        double deltaX = hypot*cos(Math.toRadians(adjustedAngle));
         //set deltaY to the distance moved times sin of the found angle
         double deltaY = -hypot*sin(Math.toRadians(adjustedAngle));
 
