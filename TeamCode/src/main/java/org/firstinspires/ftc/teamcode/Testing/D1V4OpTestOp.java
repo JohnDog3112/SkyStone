@@ -1,22 +1,25 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Testing;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import org.firstinspires.ftc.teamcode.Functions.AutoFunctions;
+import org.firstinspires.ftc.teamcode.Functions.FunctionLibrary;
 import org.firstinspires.ftc.teamcode.Hardware_Maps.D1V4hardware;
 
 @TeleOp
-public class D1V4Op extends LinearOpMode {
+public class D1V4OpTestOp extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
         D1V4hardware robot = new D1V4hardware(this);
+        AutoFunctions auto = new AutoFunctions(robot);
         robot.dcOpenClose.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         boolean fieldCentric = true;
         boolean backButtonPressed = false;
         waitForStart();
-        while (opModeIsActive()) {
+        while (opModeIsActive() && !gamepad1.dpad_up) {
             if (!backButtonPressed && gamepad1.back) fieldCentric = !fieldCentric;
             else if (backButtonPressed && !backButtonPressed) backButtonPressed = false;
             double x = gamepad1.left_stick_x;
@@ -72,6 +75,15 @@ public class D1V4Op extends LinearOpMode {
                 robot.dcOpenClose.setPower(0);
             }
 
+            telemetry.update();
+        }
+        while (opModeIsActive()) {
+            auto.gotoPosition(new FunctionLibrary.Point(0,0), 1, 0,0);
+            double x = robot.getX();
+            double y = robot.getY();
+            telemetry.addData("x:", x);
+            telemetry.addData("y: ", y);
+            telemetry.addData("distance: ", Math.sqrt((y*y) + (x*x)));
             telemetry.update();
         }
     }

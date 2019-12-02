@@ -16,22 +16,7 @@ public class mecanumFieldCentric extends LinearOpMode {
         waitForStart();
         double dOffset = 0;
         while (opModeIsActive()) {
-            double angle = 0;
-            double x = gamepad1.left_stick_x;
-            double y = gamepad1.left_stick_y;
-            angle = Math.toDegrees(Math.atan2(y,x))+90;
-            if (gamepad1.a) robot.setRotation(0);
-            telemetry.addData("angle:", angle);
-            angle = angle - robot.getWorldRotation();
-            telemetry.addData("adjustedAngle", angle);
-            double hyp = Math.sqrt((x*x) + (y*y));
-            telemetry.addData("Rotation", robot.getWorldRotation());
-            telemetry.addData("hyp", hyp);
 
-            double rotation = gamepad1.right_stick_x*.5;
-            double dX = Math.sin(Math.toRadians(angle))*hyp;
-            double dY = Math.cos(Math.toRadians(angle))*hyp *-1;
-            robot.move(dX,dY,rotation,1);
             /*
             double pFront = Math.sin(Math.toRadians(angle)) * hyp - rotation;
             double pBack = Math.sin(Math.toRadians(angle)) * hyp + rotation;

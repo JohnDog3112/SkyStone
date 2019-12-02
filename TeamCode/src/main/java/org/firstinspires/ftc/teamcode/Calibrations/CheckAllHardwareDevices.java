@@ -1,10 +1,8 @@
 package org.firstinspires.ftc.teamcode.Calibrations;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.OpModeRegistrar;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -13,6 +11,8 @@ import java.util.Map;
 
 @TeleOp
 public class CheckAllHardwareDevices extends LinearOpMode {
+    boolean slaveMotors = false;
+    double slavePowerMultiplier = 1;
     String[] deviceTypes = {
             "Motors",
             "CRServos",
@@ -28,80 +28,107 @@ public class CheckAllHardwareDevices extends LinearOpMode {
     int numberOfMotors;
     int numberOfServos;
     int numberOfCRServos;
-    ArrayList<Map.Entry<String,DcMotor>> motors = new ArrayList<>();
-    ArrayList<Map.Entry<String,Servo>> servos = new ArrayList<>();
-    ArrayList<Map.Entry<String,CRServo>> crServos = new ArrayList<>();
+    ArrayList<Map.Entry<String, DcMotor>> motors = new ArrayList<>();
+    ArrayList<Map.Entry<String, Servo>> servos = new ArrayList<>();
+    ArrayList<Map.Entry<String, CRServo>> crServos = new ArrayList<>();
     @Override
     public void runOpMode() throws InterruptedException {
         numberOfMotors = hardwareMap.dcMotor.entrySet().size();
+
         for (Map.Entry<String, DcMotor> entry : hardwareMap.dcMotor.entrySet()) {
             motors.add(entry);
         }
         numberOfServos = hardwareMap.servo.entrySet().size();
-        for (Map.Entry<String,Servo> entry : hardwareMap.servo.entrySet()) {
+        for (Map.Entry<String, Servo> entry : hardwareMap.servo.entrySet()) {
             servos.add(entry);
         }
         numberOfCRServos = hardwareMap.crservo.entrySet().size();
         for (Map.Entry<String, CRServo> entry : hardwareMap.crservo.entrySet()) {
             crServos.add(entry);
         }
+        boolean backNotPressed = true;
         while (!isStopRequested()) {
 
             telemetry.addData("Selected Device Type", deviceTypes[selectedDeviceType]);
             String deviceType = deviceTypes[selectedDeviceType];
             int leftSideModifier = 0;
             int rightSideModifier = 0;
-            if (gamepad1.dpad_down) leftSideModifier = 1;
+            if (gamepad1.dpad_up) leftSideModifier = 1;
             if (gamepad1.dpad_down) leftSideModifier = -1;
             if (gamepad1.y) rightSideModifier = 1;
             if (gamepad1.a) rightSideModifier = -1;
+            if (backNotPressed && gamepad1.back) {
+                backNotPressed = false;
+                slaveMotors = !slaveMotors;
+            } else if(!backNotPressed && !gamepad1.back) {
+                backNotPressed = true;
+            }
+            if (gamepad1.right_trigger > 0) slavePowerMultiplier = 1;
+            if (gamepad1.left_trigger > 0) slavePowerMultiplier = -1;
             if (getRuntime() > 0.5) {
                 if (gamepad1.right_bumper) {
                     selectedDeviceType++;
-                    selectedDeviceType = selectedDeviceType%(deviceTypes.length-1);
+                    selectedDeviceType = selectedDeviceType%(deviceTypes.length);
                     resetStartTime();
                 } else if (gamepad1.left_bumper) {
                     selectedDeviceType--;
-                    selectedDeviceType = selectedDeviceType%(deviceTypes.length-1);
+                    if (selectedDeviceType < 0) selectedDeviceType = deviceTypes.length-1;
+                    selectedDeviceType = selectedDeviceType%(deviceTypes.length);
                     resetStartTime();
                 }
                 if (gamepad1.dpad_up || gamepad1.dpad_down) {
                     if (deviceType == "Motors" && motors.size() > 1) {
                         selectedMotor += leftSideModifier;
-                        selectedMotor = selectedMotor%(motors.size()-1);
+                        if (selectedMotor < 0) selectedMotor = motors.size()-1;
+                        selectedMotor = selectedMotor%(motors.size());
                         resetStartTime();
                     } else if (deviceType == "Servos" && servos.size() > 1) {
                         selectedServo += leftSideModifier;
-                        selectedServo = selectedServo%(servos.size()-1);
+                        if (selectedServo < 0) selectedServo = servos.size()-1;
+                        selectedServo = selectedServo%(servos.size());
                         resetStartTime();
                     } else if (deviceType == "CRServos" && servos.size() > 1) {
                         selectedCRServo += leftSideModifier;
-                        selectedCRServo = selectedCRServo%(crServos.size()-1);
+                        if (selectedCRServo < 0) selectedCRServo = servos.size()-1;
+                        selectedCRServo = selectedCRServo%(crServos.size());
                         resetStartTime();
                     }
                 }
                 if (gamepad1.y || gamepad1.a) {
                     if (deviceType == "Motors" && motors.size() > 1) {
                         selectedMotor2 += rightSideModifier;
-                        selectedMotor2 = selectedMotor2%(motors.size()-1);
+                        if (selectedMotor2 < 0) selectedMotor2 = motors.size()-1;
+                        selectedMotor2 = selectedMotor2%(motors.size());
                         resetStartTime();
                     } else if (deviceType == "Servos" && servos.size() > 1) {
                         selectedServo2 += rightSideModifier;
-                        selectedServo2 = selectedServo2%(servos.size()-1);
+                        if (selectedServo2 < 0) selectedServo2 = servos.size()-1;
+                        selectedServo2 = selectedServo2%(servos.size());
                         resetStartTime();
                     } else if (deviceType == "CRServos" && servos.size() > 1) {
                         selectedCRServo2 += rightSideModifier;
-                        selectedCRServo2 = selectedCRServo2%(crServos.size()-1);
+                        if (selectedCRServo2 < 0) selectedCRServo2 = servos.size()-1;
+                        selectedCRServo2 = selectedCRServo2%(crServos.size());
                         resetStartTime();
                     }
                 }
             }
 
             if (deviceType == "Motors" && motors.size() > 0) {
-                telemetry.addData("Motor 1", motors.get(selectedMotor).getKey());
-                motors.get(selectedMotor).getValue().setPower(gamepad1.left_stick_y);
-                telemetry.addData("Motor 2", motors.get(selectedMotor2).getKey());
-                motors.get(selectedMotor2).getValue().setPower(gamepad1.right_stick_y);
+                telemetry.addData("slave motors: ", slaveMotors);
+                telemetry.addData("multiplier: ", slavePowerMultiplier);
+                if (slaveMotors) {
+                    telemetry.addData("Motor 1", motors.get(selectedMotor).getKey());
+                    motors.get(selectedMotor).getValue().setPower(gamepad1.left_stick_y);
+                    telemetry.addData("Motor 2", motors.get(selectedMotor2).getKey());
+                    motors.get(selectedMotor2).getValue().setPower(gamepad1.left_stick_y *slavePowerMultiplier);
+                } else {
+                    telemetry.addData("Motor 1", motors.get(selectedMotor).getKey());
+                    motors.get(selectedMotor).getValue().setPower(gamepad1.left_stick_y);
+                    telemetry.addData("Motor 2", motors.get(selectedMotor2).getKey());
+                    motors.get(selectedMotor2).getValue().setPower(gamepad1.right_stick_y);
+                }
+
             }
             if (deviceType == "Servos" && servos.size() > 0) {
                 telemetry.addData("Servo 1", servos.get(selectedServo).getKey());
@@ -123,7 +150,7 @@ public class CheckAllHardwareDevices extends LinearOpMode {
                 entry.getValue().setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 if ((entry != motors.get(selectedMotor) && entry != motors.get(selectedMotor2)) || deviceType != "Motors") entry.getValue().setPower(0);
             }
-            for (Map.Entry<String,Servo> entry : servos) {
+            for (Map.Entry<String, Servo> entry : servos) {
                 telemetry.addData(entry.getKey(), entry.getValue().getPosition());
             }
             for (Map.Entry<String, CRServo> entry : crServos) {

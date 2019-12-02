@@ -11,6 +11,7 @@ import org.firstinspires.ftc.teamcode.Hardware_Maps.KissHardware;
 public class Both_Auto extends LinearOpMode {
     private KissHardware robot;
     private AutoFunctions auto;
+
     int nSwitch = 0;
     int runState = 0;
     double delay = 0;
