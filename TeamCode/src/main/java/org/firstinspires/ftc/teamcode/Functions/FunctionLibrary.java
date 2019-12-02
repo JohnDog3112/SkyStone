@@ -18,6 +18,7 @@ import static java.lang.Math.sqrt;
 
 //a class dedicated to various class or functions needed for programming
 public class FunctionLibrary {
+    //a class that can be used to control any given motor through encoder ticks
     public static class motorMovement {
         //define the motor
         private final DcMotor motor;
@@ -83,8 +84,10 @@ public class FunctionLibrary {
     //function for retrieving the heading from the gyroscope given an offest and gyro
     public static double GetYaw(double dOffsetgyro, BNO055IMU imu){
         double dFixCurHeading;
+        //grab the imu orientation and apply the given offset
         dFixCurHeading = -(imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle-dOffsetgyro);
 
+        //wrap the angle to fit within -180 and 180 degrees
         while (dFixCurHeading>180) {
             dFixCurHeading = dFixCurHeading-360;
         }
@@ -92,7 +95,7 @@ public class FunctionLibrary {
         while (dFixCurHeading<-180) {
             dFixCurHeading = dFixCurHeading+360;
         }
-
+        //return the values it found
         return dFixCurHeading;
     }
 
@@ -130,7 +133,7 @@ public class FunctionLibrary {
         Point localPoint1 = new Point(linePoint1.x-center.x, linePoint1.y-center.y);
         Point localPoint2 = new Point(linePoint2.x-center.x, linePoint2.y-center.y);
 
-        //make sure that the distance slope between points isn't too small
+        //make sure that the distance slope between points isn't too small so we can calculate slope
         localPoint2.x = abs(localPoint1.x-localPoint2.x) < 0.005 ? localPoint2.x+0.003 : localPoint2.x;
         localPoint2.y = abs(localPoint1.y-localPoint2.y) < 0.005 ? localPoint2.y+0.003 : localPoint2.y;
 

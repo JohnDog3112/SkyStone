@@ -27,6 +27,7 @@ public class OdometryCalabration extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         D1V4hardware robot = new D1V4hardware(this);
+
         waitForStart();
         robot.setRotation(0);
         resetStartTime();
@@ -44,8 +45,12 @@ public class OdometryCalabration extends LinearOpMode {
 
                 File verticalPerTick = AppUtil.getInstance().getSettingsFile("verticalTickOffsetPerDegree");
                 ReadWriteFile.writeFile(verticalPerTick, verticalTickOffsetPerDegree + "");
+                telemetry.addData("horizontal: ", horizontalTickOffsetPerDegree);
+                telemetry.addData("vertical: ", verticalTickOffsetPerDegree);
+                telemetry.update();
             }
         }
+
         while (opModeIsActive());
 
 

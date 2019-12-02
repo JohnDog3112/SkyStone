@@ -35,7 +35,7 @@ public class D1V4hardware extends RobotConstructor {
     private static float CameraVerticalDisplacement = (float)6.5;
     private static float rampingDistance = 12;
 
-    private final double odometryWheelDiameter = 2;
+    private final double odometryWheelDiameter = 3;
     private final double odometryWheelTicksPerRev = 1440;
 
     private final double odometryWheelCircumfrance = odometryWheelDiameter*Math.PI;
@@ -73,17 +73,17 @@ public class D1V4hardware extends RobotConstructor {
         //save the hardware map from the opMode
         HardwareMap hMap = opMode.hardwareMap;
 
-        /*
+
         File horizontalPerTick = AppUtil.getInstance().getSettingsFile("horizontalTickOffsetPerDegree");
-        horizontalTicksPerDegree = Double.parseDouble(ReadWriteFile.readFile(horizontalPerTick));
-
         File verticalPerTick = AppUtil.getInstance().getSettingsFile("verticalTickOffsetPerDegree");
-        verticalTicksPerDegree = Double.parseDouble(ReadWriteFile.readFile(verticalPerTick));
 
-
-         */
-        horizontalTicksPerDegree = 0;
-        verticalTicksPerDegree = 0;
+        if (true) {
+            horizontalTicksPerDegree = Double.parseDouble(ReadWriteFile.readFile(horizontalPerTick));
+            verticalTicksPerDegree = Double.parseDouble(ReadWriteFile.readFile(verticalPerTick));
+        } else {
+            horizontalTicksPerDegree = 0;
+            verticalTicksPerDegree = 0;
+        }
         //set the variables to their corresponding hardware device
         dcFrontLeft = hMap.dcMotor.get("frontleft");
         dcFrontRight = hMap.dcMotor.get("frontright");
@@ -162,12 +162,21 @@ public class D1V4hardware extends RobotConstructor {
         super.updateOdometry();
 
         double currentGyroAngle = getGyroRotation();
-        double rotationalChange = currentGyroAngle-lastGyroAngle;
+        if (currentGyroAngle < 0) currentGyroAngle += 360;
+
+        double formatGyroAngle = currentGyroAngle;
+        if (lastGyroAngle > 345 && currentGyroAngle < 45) {
+            formatGyroAngle += 360;
+        } else if (lastGyroAngle < 45 && currentGyroAngle > 345) {
+            formatGyroAngle -= 360;
+        }
+
+        double rotationalChange = formatGyroAngle-lastGyroAngle;
 
         double currentVerticalPosition = verticalEncoder.getCurrentPosition();
         double currentHorizontalPosition = horizontalEncoder.getCurrentPosition();
 
-        double verticalWheelMovement = currentVerticalPosition - lastVerticalPos -(verticalTicksPerDegree*rotationalChange);
+        double verticalWheelMovement = currentVerticalPosition - lastVerticalPos +(verticalTicksPerDegree*rotationalChange);
         double horizontalWheelMovement = currentHorizontalPosition - lastHorizontalPos - (horizontalTicksPerDegree*rotationalChange);
 
         lastGyroAngle = currentGyroAngle;
@@ -205,9 +214,9 @@ public class D1V4hardware extends RobotConstructor {
         double adjustedAngle = angle - getWorldRotation();
 
         //set deltaX to the distance moved times cosine of the found angle
-        double deltaX = hypot*cos(Math.toRadians(adjustedAngle));
+        double deltaX = -hypot*cos(Math.toRadians(adjustedAngle));
         //set deltaY to the distance moved times sin of the found angle
-        double deltaY = hypot*sin(Math.toRadians(adjustedAngle));
+        double deltaY = -hypot*sin(Math.toRadians(adjustedAngle));
 
 
 

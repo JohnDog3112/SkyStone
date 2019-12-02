@@ -34,6 +34,7 @@ public class CheckAllHardwareDevices extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         numberOfMotors = hardwareMap.dcMotor.entrySet().size();
+
         for (Map.Entry<String, DcMotor> entry : hardwareMap.dcMotor.entrySet()) {
             motors.add(entry);
         }

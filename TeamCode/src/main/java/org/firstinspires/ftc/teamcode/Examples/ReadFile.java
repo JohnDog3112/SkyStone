@@ -25,7 +25,7 @@ public class ReadFile extends LinearOpMode {
         dataLine.put("data2", "" + 23);
 
         data.add(dataLine);
-        AutoConfig.writeToFile("testSettingsFile", data);
+        telemetry.addData("wroteFile:", AutoConfig.writeToFile("testSettingsFile", data));
 
         AutoConfig.readFileReturnData fileData = AutoConfig.readFile("testSettingsFile");
         for (String headers : fileData.headers) telemetry.addData("Header: ",headers);

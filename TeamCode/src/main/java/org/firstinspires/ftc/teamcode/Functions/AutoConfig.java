@@ -70,7 +70,7 @@ public class AutoConfig {
             String writeString = "";
             for (int i =0; i < oldData.headers.length; i++) {
                 writeString += oldData.headers[i];
-                if (i != oldData.headers.length-1) {
+                if (i < oldData.headers.length-1) {
                     writeString += ",";
                 }
             }
@@ -125,7 +125,7 @@ public class AutoConfig {
         String writeString = "";
         for (int i = 0; i < headers.length; i++) {
             writeString += headers[i];
-            if (i == headers.length-1) writeString += ",";
+            if (i < headers.length-1) writeString += ",";
         }
         ReadWriteFile.writeFile(file,writeString);
     }

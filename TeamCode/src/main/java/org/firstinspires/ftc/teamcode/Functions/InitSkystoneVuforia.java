@@ -18,7 +18,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
 
-//class for initializing Vuforia for the 2019-2020 skystone challenge
+//class used to initialize vuforia with all the of their positions
+//most of this came from the ConceptVuforiaSkyStoneNavigationWebcam class
+//but was modified in order to fit in as an initializer
 public class InitSkystoneVuforia {
 
     //initialize class variables
@@ -179,7 +181,7 @@ public class InitSkystoneVuforia {
 
     }
 
-    //vuforiaData constructor class for retrieving the data
+    //vuforiaData constructor class for retrieving the vuforia data
     public static class vuforiaData {
         public final VuforiaLocalizer vuforia;
         public final VuforiaTrackables trackables;

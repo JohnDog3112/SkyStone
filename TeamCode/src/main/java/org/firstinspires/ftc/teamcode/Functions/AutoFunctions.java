@@ -172,16 +172,23 @@ public class AutoFunctions {
                 if (Math.abs(dRotationPow) < robot.getminMoveSpeed()) dRotationPow *= robot.getminMoveSpeed()/Math.abs(dRotationPow);
                 //Tell the passed through movement function to turn
                 robot.move(0,0,dRotationPow,1);
-
+                //set the state to 1 again for the next iteration and set the return to 1
                 nState = 1;
                 nReturn = 1;
+                //chest if the difference between the current rotation and target rotation
+                //are with the allowed error value.
                 if (Math.abs(rotation-dAngle) <= nMaxError) {
+                    //reset the state
                     nState = 0;
+                    //turn of the drive motors
                     for (DcMotor motor : robot.getDriveMotors()) {
                         motor.setPower(0);
                     }
+                    //return -1 to signify the program finished successfully.
                     nReturn = -1;
                 }
+                //check if the programmer has been going longer than it's supposed to
+                //if it is, stop all motors, reset state, and return -2 to signify a timeout.
                 if (timer.milliseconds() > nTimeout*1000) {
                     nState = 0;
                     for (DcMotor motor : robot.getDriveMotors()) {
@@ -217,7 +224,7 @@ public class AutoFunctions {
         double adjustedY = -distance*Math.sin(Math.toRadians(robotAngle));
 
         //feeds those values into the robot move function
-        robot.move(adjustedX, adjustedY, 0, power);
+        robot.move(adjustedY, adjustedX, 0, power);
 
         return 0;
     }
@@ -262,7 +269,7 @@ public class AutoFunctions {
             robotRotation = targetAngle360-currentAngle360;
         }
         //pass the x movement, y movement, rotation, and power to the move function in the constructor class
-        robot.move(adjustedX, adjustedY, robotRotation/100, power);
+        robot.move(adjustedY, adjustedX, robotRotation/100, power);
 
         return 0;
     }
