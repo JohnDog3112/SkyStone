@@ -26,6 +26,7 @@ public class KissHardware extends RobotConstructor {
     public static final float CameraLeftDisplacement = (float)4;
     public static final float CameraVerticalDisplacement = (float)6.5;
     private static float rampingDistance = 12;
+    private static int odometryUpdateRate = 50;
 
     public final double inchesPerTick;
     public final DcMotor dcFrontLeft;
@@ -37,7 +38,7 @@ public class KissHardware extends RobotConstructor {
 
 
     public KissHardware(LinearOpMode opMode) {
-        super(opMode, wheelDiameter, dKp, minMoveSpeed,rampingDistance, CameraForwardDisplacement, CameraLeftDisplacement, CameraVerticalDisplacement, Webcamname, VuforiaKey);
+        super(opMode, wheelDiameter, dKp, minMoveSpeed,rampingDistance, CameraForwardDisplacement, CameraLeftDisplacement, CameraVerticalDisplacement, Webcamname, VuforiaKey, odometryUpdateRate);
         HardwareMap hMap = opMode.hardwareMap;
         dcFrontLeft = hMap.dcMotor.get("frontLeft");
         dcFrontRight = hMap.dcMotor.get("frontRight");

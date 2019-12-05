@@ -1,8 +1,11 @@
 package org.firstinspires.ftc.teamcode.Hardware_Maps;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
@@ -29,17 +32,20 @@ public class D1V4hardware extends RobotConstructor {
     private static double wheelDiameter = 4;
     private static double dKp = 0.05;
     private static double minMoveSpeed = 0.1;
-    private static float CameraForwardDisplacement = (float)6.5;
-    private static float CameraLeftDisplacement = 4;
-    private static float CameraVerticalDisplacement = (float)6.5;
+    public final static float CameraForwardDisplacement = (float)6.75;
+    public final static float CameraLeftDisplacement = (float)1.5;
+    public final static float CameraVerticalDisplacement = (float)5.25;
     private static float rampingDistance = 12;
+    private static int odometryUpdateRate = 50;
 
     private final double odometryWheelDiameter = 3;
-    private final double odometryWheelTicksPerRev = 1440;
+    public final double odometryWheelTicksPerRev = 1440;
 
-    private final double odometryWheelCircumfrance = odometryWheelDiameter*Math.PI;
-    private final double odometryInchesPerTick = odometryWheelCircumfrance/odometryWheelTicksPerRev;
+    public final double odometryWheelCircumfrance = odometryWheelDiameter*Math.PI;
+    public final double odometryInchesPerTick = odometryWheelCircumfrance/odometryWheelTicksPerRev;
 
+    public final double horizontalWheelTicksPerRev = odometryWheelTicksPerRev;
+    public final double verticalWheelTicksPerRev = odometryWheelTicksPerRev;
     public final double inchesPerTick;
     private final double verticalTicksPerDegree;
     private final double horizontalTicksPerDegree;
@@ -68,7 +74,7 @@ public class D1V4hardware extends RobotConstructor {
     //setup the constructor function
     public D1V4hardware(LinearOpMode opMode) {
         //provide the opMode given on creation as well as the variables defined above
-        super(opMode, wheelDiameter, dKp, minMoveSpeed,rampingDistance, CameraForwardDisplacement, CameraLeftDisplacement, CameraVerticalDisplacement, Webcamname, VuforiaKey);
+        super(opMode, wheelDiameter, dKp, minMoveSpeed,rampingDistance, CameraForwardDisplacement, CameraLeftDisplacement, CameraVerticalDisplacement, Webcamname, VuforiaKey, odometryUpdateRate);
         //save the hardware map from the opMode
         HardwareMap hMap = opMode.hardwareMap;
 
@@ -76,13 +82,10 @@ public class D1V4hardware extends RobotConstructor {
         File horizontalPerTick = AppUtil.getInstance().getSettingsFile("horizontalTickOffsetPerDegree");
         File verticalPerTick = AppUtil.getInstance().getSettingsFile("verticalTickOffsetPerDegree");
 
-        if (true) {
-            horizontalTicksPerDegree = Double.parseDouble(ReadWriteFile.readFile(horizontalPerTick));
-            verticalTicksPerDegree = Double.parseDouble(ReadWriteFile.readFile(verticalPerTick));
-        } else {
-            horizontalTicksPerDegree = 0;
-            verticalTicksPerDegree = 0;
-        }
+
+        horizontalTicksPerDegree = Double.parseDouble(ReadWriteFile.readFile(horizontalPerTick));
+        verticalTicksPerDegree = Double.parseDouble(ReadWriteFile.readFile(verticalPerTick));
+
         //set the variables to their corresponding hardware device
         dcFrontLeft = hMap.dcMotor.get("frontleft");
         dcFrontRight = hMap.dcMotor.get("frontright");
@@ -102,24 +105,6 @@ public class D1V4hardware extends RobotConstructor {
 
         upperLimitSwitch = hMap.touchSensor.get("upperlimit");
         lowerLimitSwitch = hMap.touchSensor.get("downlimit");
-
-        //reset all encoders
-        dcFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        dcFrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        dcBackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        dcBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        dcInOut.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        dcUpDown1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        dcUpDown2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        dcOpenClose.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        //set them to run without encoder by default
-        dcFrontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        dcFrontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        dcBackLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        dcBackRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        dcInOut.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        dcOpenClose.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         //setup the directions the devices need to operate in
         dcFrontLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -175,70 +160,30 @@ public class D1V4hardware extends RobotConstructor {
     //overide the odometry function to make it robot specific
     @Override
     public void updateOdometry() {
-        //call the parent's updateOdometry class to update rotation
         super.updateOdometry();
-
-        double currentGyroAngle = getGyroRotation();
-        if (currentGyroAngle < 0) currentGyroAngle += 360;
-
-        double formatGyroAngle = currentGyroAngle;
-        if (lastGyroAngle > 345 && currentGyroAngle < 45) {
-            formatGyroAngle += 360;
-        } else if (lastGyroAngle < 45 && currentGyroAngle > 345) {
-            formatGyroAngle -= 360;
-        }
-
-        double rotationalChange = formatGyroAngle-lastGyroAngle;
-
-        double currentVerticalPosition = verticalEncoder.getCurrentPosition();
-        double currentHorizontalPosition = horizontalEncoder.getCurrentPosition();
-
-        double verticalWheelMovement = currentVerticalPosition - lastVerticalPos +(verticalTicksPerDegree*rotationalChange);
-        double horizontalWheelMovement = currentHorizontalPosition - lastHorizontalPos - (horizontalTicksPerDegree*rotationalChange);
-        horizontalWheelMovement *= -1;
-        lastGyroAngle = currentGyroAngle;
-        lastVerticalPos = currentVerticalPosition;
-        lastHorizontalPos = currentHorizontalPosition;
-
-        double yOffset = verticalWheelMovement*odometryInchesPerTick;
-        double xOffset = horizontalWheelMovement*odometryInchesPerTick;
-
-
-        /*
-        Old odometry code using inverse kinimatics
-        //find the offset from the current encoder positions to the previous ones
         double frontLeftOffset = (dcFrontLeft.getCurrentPosition()- lastFrontLeftPos) * inchesPerTick;
         double frontRightOffset = (dcFrontRight.getCurrentPosition()- lastFrontRightPos) * inchesPerTick;
         double backLeftOffset = (dcBackLeft.getCurrentPosition()- lastBackLeftPos) * inchesPerTick;
         double backRightOffset = (dcBackRight.getCurrentPosition()- lastBackRightPos) * inchesPerTick;
 
-        //set the previous values to the current ones for next iteration
         lastFrontLeftPos = dcFrontLeft.getCurrentPosition();
         lastFrontRightPos = dcFrontRight.getCurrentPosition();
         lastBackLeftPos = dcBackLeft.getCurrentPosition();
         lastBackRightPos = dcBackRight.getCurrentPosition();
 
-        //use inverse kinimatics to find the x and y offsets
-        double yOffset = -(frontLeftOffset+frontRightOffset+backLeftOffset+backRightOffset)/4;
-        double xOffset = (-frontLeftOffset + frontRightOffset + backLeftOffset - backRightOffset)/4;
-        */
-        //find the straight line distance from the last position
+        double yOffset = (frontLeftOffset+frontRightOffset+backLeftOffset+backRightOffset)/4;
+        double xOffset = -(-frontLeftOffset + frontRightOffset + backLeftOffset - backRightOffset)/4;
+
         double hypot = sqrt(pow(xOffset,2) + pow(yOffset,2));
 
-        //find the angle of movement
         double angle = Math.toDegrees(atan2(yOffset, xOffset));
-        //adjust that angle to a global movement based off gyro data
         double adjustedAngle = angle - getWorldRotation();
 
-        //set deltaX to the distance moved times cosine of the found angle
         double deltaX = hypot*cos(Math.toRadians(adjustedAngle));
-        //set deltaY to the distance moved times sin of the found angle
-        double deltaY = -hypot*sin(Math.toRadians(adjustedAngle));
+        double deltaY = hypot*sin(Math.toRadians(adjustedAngle));
 
-
-
-        //add the x and y offsets to the global x and y positions
         addDeviation(new FunctionLibrary.Point(deltaX, deltaY));
+
     }
 
     //overide the movement class
@@ -246,6 +191,7 @@ public class D1V4hardware extends RobotConstructor {
     public void move(double x, double y, double rotation, double power) {
         //invert the x input as it's flipped
         x = -x;
+        Log.d("Movement: ", "x: " + x + ", y: " + y + ", rotation: " + rotation);
         //define initial kinimatics based off of mecanum drive
         double pFrontLeft= x + y;
         double pFrontRight = x - y;
@@ -260,8 +206,10 @@ public class D1V4hardware extends RobotConstructor {
         //if that maximum power level is higher than the power given,
         //find the scaler value that will bring it down to that
         //and scale all of the motors using it
-        if (max > power) {
-            double scaler = power/max;
+        double drivePower = power;
+        if (rotation > 0.1) drivePower = 0.8;
+        if (max > drivePower) {
+            double scaler = drivePower/max;
             pFrontLeft = pFrontLeft * scaler;
             pFrontRight = pFrontRight * scaler;
             pBackLeft = pBackLeft * scaler;
@@ -269,18 +217,18 @@ public class D1V4hardware extends RobotConstructor {
         }
 
         //add the rotation powers to the motors
+
         pFrontLeft = pFrontLeft + rotation;
         pFrontRight = pFrontRight - rotation;
         pBackLeft = pBackLeft + rotation;
         pBackRight = pBackRight - rotation;
-
         //find the motor with maximum power again
         max = max(max(abs(pFrontRight),abs(pFrontLeft)),max(abs(pBackRight), abs(pBackRight)));
 
-        //if that maximum power level is higher than the power given,
+        //if that maximum power level is higher than 1,
         //find the scaler value that will bring it down to that
         //and scale all of the motors using it
-        if (max > power) {
+        if (max > 1) {
             double scaler = power/max;
             pFrontLeft = pFrontLeft * scaler;
             pFrontRight = pFrontRight * scaler;

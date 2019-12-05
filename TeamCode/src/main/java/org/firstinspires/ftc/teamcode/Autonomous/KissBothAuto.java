@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
 import org.firstinspires.ftc.teamcode.Functions.AutoFunctions;
 import org.firstinspires.ftc.teamcode.Functions.FunctionLibrary;
+import org.firstinspires.ftc.teamcode.Hardware_Maps.D1V4hardware;
 import org.firstinspires.ftc.teamcode.Hardware_Maps.KissHardware;
 
 @Autonomous
@@ -20,14 +21,20 @@ public class KissBothAuto extends LinearOpMode {
     private double result = 0;
     @Override
     public void runOpMode() throws InterruptedException {
-        KissHardware robot = new KissHardware(this);
+        D1V4hardware robot = new D1V4hardware(this);
         AutoFunctions auto = new AutoFunctions(robot);
         robot.initVuforia(hardwareMap);
         waitForStart();
         robot.SkystoneTrackables.activate();
-        robot.setPosition(-72+dMTFOffset,-12);
-        robot.setRotation(90);
+        FunctionLibrary.Point startingPosition = new FunctionLibrary.Point(-72+dMTFOffset,-9);
+        double startingRotation = 90;
+        robot.setPosition(startingPosition);
+        robot.setRotation(startingRotation);
         while (opModeIsActive()) {
+            Log.d("x", robot.getX() + "");
+            Log.d("y", robot.getY() + "");
+            Log.d("rotation", robot.getWorldRotation() + "");
+            Log.d("state", nSwitch + "");
             switch(nSwitch) {
                 case 0:
                     destination = new FunctionLibrary.Point(-36-robot.CameraForwardDisplacement,-24-8+robot.CameraLeftDisplacement);
@@ -52,7 +59,7 @@ public class KissBothAuto extends LinearOpMode {
                     }
                     break;
                 case 2:
-                    destination = new FunctionLibrary.Point(-36-robot.CameraForwardDisplacement,-18);
+                    destination = new FunctionLibrary.Point(-36-robot.CameraForwardDisplacement,-24);
                     result = auto.gotoPosition(destination,1,1,90);
                     if (result < 0) nSwitch++;
                     break;

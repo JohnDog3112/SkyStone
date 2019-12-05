@@ -47,6 +47,8 @@ public class RobotConstructor {
     public HardwareMap hMap;
     public final BNO055IMU imu;
 
+    public final int odometryUpdateRate;
+
     private final double wheelDiameter;
     private final double dKp;
     private final double minMoveSpeed;
@@ -60,7 +62,6 @@ public class RobotConstructor {
     private volatile double worldRotation = 0;
     private volatile double rotationOffset = 0;
     private volatile double gyroRotation = 0;
-    private volatile FunctionLibrary.Point newPosition = null;
 
     boolean useWebcam = true;
 
@@ -68,9 +69,10 @@ public class RobotConstructor {
     public RobotConstructor(LinearOpMode opMode, double wheelDiameter, double dKp, double minMoveSpeed,
                             double rampingDistance, float CameraForwardDisplacement,
                             float CameraLeftDisplacement, float CameraVerticalDisplacement,
-                            String webcameName, String VuforiaKey) {
+                            String webcameName, String VuforiaKey, int odometryUpdateRate) {
         //copy the variables that were passed through to the ones stored in the class
         this.hMap = opMode.hardwareMap;
+        this.odometryUpdateRate = odometryUpdateRate;
         this.CameraForwardDisplacement = CameraForwardDisplacement;
         this.CameraLeftDisplacement = CameraLeftDisplacement;
         this.CameraVerticalDisplacement = CameraVerticalDisplacement;
@@ -95,7 +97,7 @@ public class RobotConstructor {
         //initialize the imu
         imu.initialize(BNparameters);
 
-        //create new odometry object passing through this class and the opmode
+        //create new odometry object
         this.odometry = new Odometry(this,opMode);
         //create a new thread off of the odometry object
         this.odometryThread = new Thread(odometry);
@@ -109,9 +111,10 @@ public class RobotConstructor {
     public RobotConstructor(LinearOpMode opMode, double wheelDiameter, double dKp, double minMoveSpeed,
                             double rampingDistance, float CameraForwardDisplacement,
                             float CameraLeftDisplacement, float CameraVerticalDisplacement,
-                            String VuforiaKey) {
+                            String VuforiaKey, int odometryUpdateRate) {
         //copy the variables that were passed through to the ones in the class
         this.hMap = opMode.hardwareMap;
+        this.odometryUpdateRate = odometryUpdateRate;
         this.CameraForwardDisplacement = CameraForwardDisplacement;
         this.CameraLeftDisplacement = CameraLeftDisplacement;
         this.CameraVerticalDisplacement = CameraVerticalDisplacement;
@@ -158,13 +161,14 @@ public class RobotConstructor {
     //when overriden, you call super.updateOdometry() to update the rotation and then add inverse kinimatics
     //to calculate the position
     public void updateOdometry() {
-        if (newPosition != null) {
-            x = newPosition.x;
-            y = newPosition.y;
-            newPosition = null;
-        }
         gyroRotation = GetYaw(0,imu);
-        worldRotation = WrapAngleDegrees(gyroRotation + rotationOffset);
+
+        double rotation = gyroRotation+rotationOffset;
+        if (rotation > 360) rotation %= 360;
+        if (rotation < -360) rotation %= -360;
+        if (rotation > 180) rotation -= 360;
+        if (rotation < -180) rotation += 360;
+        worldRotation = rotation;
     }
     //initializes vuforia for the 2019-2020 skystone challenge
     public void initVuforia(HardwareMap hMap) {
@@ -197,7 +201,7 @@ public class RobotConstructor {
         }
     }
 
-    //getter and setter functions for class variables
+    //return and setter functions for class variables
     public double getWheelCircumfrance() {
         return wheelCircumfrance;
     }
@@ -207,8 +211,6 @@ public class RobotConstructor {
     public double getminMoveSpeed() {
         return minMoveSpeed;
     }
-    //this function is for robots that need to return all the drive motors seperatly
-    //has to be overridden in robot-specific class to work properly
     public DcMotor[] getDriveMotors() {return new DcMotor[0]; }
     public double getRampingDistance() {return rampingDistance; }
     public double getX() {
@@ -220,27 +222,19 @@ public class RobotConstructor {
     public FunctionLibrary.Point getPosition() {
         return new FunctionLibrary.Point(x,y);
     }
-    public boolean setPosition(FunctionLibrary.Point position) {
-        //check that we haven't already make a change position request
-        //if we haven't, define it to a temporary variable that gets
-        //used on the next odometry thread cycle.
-        if (newPosition == null) {
-            newPosition = position;
-            return true;
-        }
-        //if we have already made a request, return false to say you can't do that.
-        return false;
+    public void setX(double x) {
+        this.x = x;
     }
-    public boolean setPosition(double x, double y) {
-        //check that we haven't already make a change position request
-        //if we haven't, define it to a temporary variable that gets
-        //used on the next odometry thread cycle.
-        if (newPosition == null) {
-            newPosition = new FunctionLibrary.Point(x,y);
-            return true;
-        }
-        //if we have already made a request, return false to say you can't do that
-        return false;
+    public void setY(double y) {
+        this.y = y;
+    }
+    public void setPosition(FunctionLibrary.Point position) {
+        x = position.x;
+        y = position.y;
+    }
+    public void setPosition(double x, double y) {
+        this.x = x;
+        this.y = y;
     }
     public void setRotation(double targetRotation) {
         rotationOffset = WrapAngleDegrees(targetRotation)-gyroRotation;

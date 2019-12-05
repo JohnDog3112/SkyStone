@@ -6,6 +6,10 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.teamcode.Hardware_Maps.D1V4hardware;
 
+import java.lang.reflect.Field;
+
+import static org.firstinspires.ftc.teamcode.Functions.FunctionLibrary.GetYaw;
+
 @TeleOp
 public class D1V4Op extends LinearOpMode {
 
@@ -15,23 +19,41 @@ public class D1V4Op extends LinearOpMode {
         robot.dcOpenClose.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         boolean fieldCentric = true;
         boolean backButtonPressed = false;
+        double dOffset = 0;
         waitForStart();
         while (opModeIsActive()) {
-            if (!backButtonPressed && gamepad1.back) fieldCentric = !fieldCentric;
-            else if (backButtonPressed && !backButtonPressed) backButtonPressed = false;
+            telemetry.addData("fieldCentric", fieldCentric);
+            if (!backButtonPressed && gamepad1.back) {
+                if (fieldCentric) {
+                    fieldCentric = false;
+                } else fieldCentric = true;
+                dOffset = GetYaw(0,robot.imu);
+                backButtonPressed = true;
+            }
+            else if (!gamepad1.back && backButtonPressed) backButtonPressed = false;
             double x = gamepad1.left_stick_x;
             double y = gamepad1.left_stick_y;
-            double angle = Math.toDegrees(Math.atan2(y,x))+90;
-            telemetry.addData("angle:", angle);
-            angle = angle - robot.getWorldRotation();
-            telemetry.addData("adjustedAngle", angle);
-            double hyp = Math.sqrt((x*x) + (y*y));
-            telemetry.addData("Rotation", robot.getWorldRotation());
-            telemetry.addData("hyp", hyp);
+            double dX;
+            double dY;
+            double rotation;
+            if (fieldCentric) {
+                double angle = Math.toDegrees(Math.atan2(y,x))+90;
+                telemetry.addData("angle:", angle);
+                angle = angle - GetYaw(0,robot.imu) - dOffset;
+                telemetry.addData("adjustedAngle", angle);
+                double hyp = Math.sqrt((x*x) + (y*y));
+                telemetry.addData("Rotation", robot.getWorldRotation());
+                telemetry.addData("hyp", hyp);
 
-            double rotation = gamepad1.right_stick_x*.5;
-            double dX = Math.cos(Math.toRadians(angle))*hyp * -1;
-            double dY = Math.sin(Math.toRadians(angle))*hyp;
+                rotation = gamepad1.right_stick_x*.5;
+                dX = Math.cos(Math.toRadians(angle))*hyp * -1;
+                dY = Math.sin(Math.toRadians(angle))*hyp;
+            } else {
+                dX = gamepad1.left_stick_x;
+                dY = gamepad1.left_stick_y;
+                rotation = gamepad1.right_stick_y;
+            }
+
             robot.move(dX,dY,rotation,1);
             telemetry.addData("x: ", robot.getX());
             telemetry.addData("y: ", robot.getY());
@@ -57,9 +79,9 @@ public class D1V4Op extends LinearOpMode {
                 robot.dcUpDown2.setPower(0);
             }
             if (gamepad1.y) {
-                robot.dcInOut.setPower(1);
+                robot.dcInOut.setPower(0.5);
             } else if (gamepad1.a) {
-                robot.dcInOut.setPower(-1);
+                robot.dcInOut.setPower(-0.5);
             } else {
                 robot.dcInOut.setPower(0);
             }

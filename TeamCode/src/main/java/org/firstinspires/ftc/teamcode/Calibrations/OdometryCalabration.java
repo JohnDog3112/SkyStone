@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import static org.firstinspires.ftc.teamcode.Functions.FunctionLibrary.GetYaw;
 
@@ -27,23 +28,47 @@ public class OdometryCalabration extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         D1V4hardware robot = new D1V4hardware(this);
-
+        for (Map.Entry<String,DcMotor> entry : hardwareMap.dcMotor.entrySet()) {
+            entry.getValue().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
         waitForStart();
         robot.setRotation(0);
         resetStartTime();
-        while (!isStopRequested() && getRuntime() < 1);
+        while (!isStopRequested() && getRuntime() < 1) {
+            telemetry.addData("runtime", getRuntime());
+            telemetry.update();
+        }
         if (opModeIsActive()) {
             robot.move(0,0,1,1);
-            while (Math.abs(robot.getGyroRotation()) < 90 && opModeIsActive()) ;
+            while (Math.abs(robot.getGyroRotation()) < 90 && opModeIsActive()) {
+                telemetry.addData("runtime", getRuntime());
+                telemetry.update();
+            }
             robot.move(0,0,0,0);
             if (opModeIsActive()) {
+                resetStartTime();
+                while (opModeIsActive() && getRuntime() < 5);
                 double rotation = robot.getGyroRotation();
                 double horizontalTickOffsetPerDegree = robot.horizontalEncoder.getCurrentPosition()/rotation;
                 double verticalTickOffsetPerDegree = robot.verticalEncoder.getCurrentPosition()/rotation;
                 File horizontalPerTick = AppUtil.getInstance().getSettingsFile("horizontalTickOffsetPerDegree");
+                if (!horizontalPerTick.exists()) {
+                    try {
+                        horizontalPerTick.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
                 ReadWriteFile.writeFile(horizontalPerTick, horizontalTickOffsetPerDegree+ "");
 
                 File verticalPerTick = AppUtil.getInstance().getSettingsFile("verticalTickOffsetPerDegree");
+                if (!verticalPerTick.exists()) {
+                    try {
+                        verticalPerTick.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
                 ReadWriteFile.writeFile(verticalPerTick, verticalTickOffsetPerDegree + "");
                 telemetry.addData("horizontal: ", horizontalTickOffsetPerDegree);
                 telemetry.addData("vertical: ", verticalTickOffsetPerDegree);

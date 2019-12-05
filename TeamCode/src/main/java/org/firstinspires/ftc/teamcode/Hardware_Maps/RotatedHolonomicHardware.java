@@ -33,10 +33,11 @@ public class RotatedHolonomicHardware extends RobotConstructor {
     private static double rampingDistance = 12;
     private static double minMoveSpeed = 0.1;
     private static String webcameName = "Webcam 1";
+    private static int odometryUpdateRate = 50;
 
     //this will take the inputs on initialization of the hMap.
     public RotatedHolonomicHardware(LinearOpMode opMode) {
-        super(opMode, wheelDiameter, dKp, minMoveSpeed, rampingDistance, CameraForwardDisplacement, CameraLeftDisplacement, CameraVerticalDisplacement, webcameName, VuforiaKey);
+        super(opMode, wheelDiameter, dKp, minMoveSpeed, rampingDistance, CameraForwardDisplacement, CameraLeftDisplacement, CameraVerticalDisplacement, webcameName, VuforiaKey, odometryUpdateRate);
         this.hMap = opMode.hardwareMap;
         mFront = hMap.dcMotor.get("mFront");
         mBack = hMap.dcMotor.get("mBack");

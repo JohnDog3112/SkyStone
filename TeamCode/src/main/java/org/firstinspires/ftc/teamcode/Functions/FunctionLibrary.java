@@ -21,13 +21,13 @@ public class FunctionLibrary {
     //a class that can be used to control any given motor through encoder ticks
     public static class motorMovement {
         //define the motor
-        private final DcMotor motor;
+        private final DcMotor[] motors;
         private int nState = 0;
         ElapsedTime timer = new ElapsedTime();
         //define the inputs needed to create a new instance of the class
-        public motorMovement(DcMotor motor) {
+        public motorMovement(DcMotor ... motors) {
             //take motor input and assign it to the stored motor variable
-            this.motor = motor;
+            this.motors = motors;
         }
         //allows the motor to be moved using encoder ticks
         // 0: Starting, reset encoders
@@ -35,12 +35,14 @@ public class FunctionLibrary {
         // 2: encoders have been reset, start the movement
         // -1: movement is done
         // -2: program timeout
-        public int move_using_encoder(int ticks, double power, double timeout) {
+        public int move_using_encoder(int ticks, double power, double timeout, int maxError) {
             int nReturn = 0;
             switch (nState) {
                 case 0:
                     //reset the encoders
-                    motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    for (DcMotor motor : motors) {
+                        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    }
                     //reset the timer for the timeout
                     timer.reset();
                     //set the return to go to the next state
@@ -49,13 +51,19 @@ public class FunctionLibrary {
                     break;
                 case 1:
                     //check if encoders have been reset properly, if not reset them again
-                    if (motor.getCurrentPosition() < 100) {
+                    boolean allAreReset = true;
+                    for (DcMotor motor : motors) {
+                        if (motor.getCurrentPosition() > 50) {
+                            motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                            allAreReset = false;
+                        }
+                    }
+                    if (allAreReset){
                         nReturn = 2;
                         nState = 2;
                     } else {
                         nReturn = 1;
                         nState = 1;
-                        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                     }
                     break;
                 case 2:
@@ -64,17 +72,25 @@ public class FunctionLibrary {
                         nState = 0;
                         return -2;
                     }
-                    //set the motors power and position
-                    motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    motor.setPower(power);
-                    motor.setTargetPosition(ticks);
-                    //check if the motor has reached it's target
-                    if (Math.abs(motor.getCurrentPosition()-ticks)<100) {
-                        //stop the motor
-                        motor.setPower(0);
-                        //tell the autonomous that the movement is done
-                        nReturn = -1;
-                        nState = 0;
+                    boolean done = false;
+                    for (DcMotor motor : motors) {
+                        //set the motors power and position
+                        motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        motor.setPower(power);
+                        motor.setTargetPosition(ticks);
+                        //check if the motor has reached it's target
+                        if (Math.abs(motor.getCurrentPosition() - ticks) < maxError) {
+                            //stop the motor
+                            //tell the autonomous that the movement is done
+                            nReturn = -1;
+                            nState = 0;
+                            done = true;
+                        }
+                    }
+                    if (done) {
+                        for (DcMotor motor : motors) {
+                            motor.setPower(0);
+                        }
                     }
 
             }

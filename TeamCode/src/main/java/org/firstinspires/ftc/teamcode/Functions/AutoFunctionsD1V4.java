@@ -1,30 +1,33 @@
 package org.firstinspires.ftc.teamcode.Functions;
 
+import android.util.Log;
+
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Func;
-import org.firstinspires.ftc.robotcore.external.Function;
 import org.firstinspires.ftc.robotcore.internal.files.DataLogger;
+import org.firstinspires.ftc.teamcode.Hardware_Maps.D1V4hardware;
 
 import java.io.IOException;
 
+import static org.firstinspires.ftc.teamcode.Functions.FunctionLibrary.GetYaw;
+
 //class dedicated for functions used in autonomous
-public class AutoFunctions {
+public class AutoFunctionsD1V4 {
     //set up the initial variables
     private int nState = 0;
     private BNO055IMU imu;
     private final ElapsedTime timer = new ElapsedTime(); //create a timer used for timeouts
     // this value tells the program how big your wheels are in inches
-    private final RobotConstructor robot;
+    private final D1V4hardware robot;
     private double dOffsetGyro = 0;
     private DataLogger Dl;
     private Odometry odometry;
 
     //this is the constant for error correction in PID.
     //This takes in the robotConstructor object
-    public AutoFunctions(RobotConstructor robot) {
+    public AutoFunctionsD1V4(D1V4hardware robot) {
         //saves the robot
         this.robot = robot;
         //initialize the gyro
@@ -51,12 +54,13 @@ public class AutoFunctions {
     // 2: encoders have been reset, start the movement
     // -1: movement is done
     // -2: program timeout
-    public int MoveRotHolPID(double distance, double dAngle, double power, double timeout, double targetAngle) {
+    public int MovePID(double distance, double dAngle, double power, double timeout, double targetAngle) {
         int nReturn = 0; //tells autonomous what state the program is in and is used to go to the next state
         //go to the current state
         switch(nState) {
             case 0:
-                set_drive_encoders(DcMotor.RunMode.STOP_AND_RESET_ENCODER); //reset the encode
+                robot.verticalEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); //reset the encoders
+                robot.horizontalEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
                 timer.reset(); //reset the timer for the timeout
                 nState = 1;
                 nReturn = 1;
@@ -66,29 +70,35 @@ public class AutoFunctions {
                 nState = 1;
                 nReturn = 1;
                 //overide nReturn value to 2 if the drive motor encoders are within the margin of error
-                if (check_if_encoders_reset(100)) {
+                if (robot.verticalEncoder.getCurrentPosition() < 100 && robot.horizontalEncoder.getCurrentPosition() < 100) {
                     nReturn = 2;
                     nState = 2;
                 }
                 //if that doesn't work, reset the encoders again and repeat this step using the default nReturn value
-                else set_drive_encoders(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                else {
+                    robot.verticalEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); //reset the encoders
+                    robot.horizontalEncoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                }
                 break;
             case 2:
+                robot.verticalEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                robot.horizontalEncoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 if ((int)timer.milliseconds() > timeout*1000) {
-                    for (DcMotor motor : robot.getDriveMotors()) {
-                        motor.setPower(0);
-                    }
+                    robot.dcFrontRight.setPower(0);
+                    robot.dcFrontLeft.setPower(0);
+                    robot.dcBackLeft.setPower(0);
+                    robot.dcBackRight.setPower(0);
                     nState = 0;
                     return -2;
                 }
-                int ticks = (int)(distance/robot.getWheelCircumfrance() * robot.getDriveMotors()[0].getMotorType().getTicksPerRev());
+                double revolutions = (double)(distance/robot.odometryWheelCircumfrance);
                 //calculates the amount of ticks the Left and Right motors need to move
-                int nLeftRightMov = -(int)(Math.cos(Math.toRadians(dAngle))*ticks);
+                int nLeftRightMov = -(int)((Math.cos(Math.toRadians(dAngle))*revolutions)*robot.horizontalWheelTicksPerRev);
                 //calculates the amount of ticks the Front and Back motors need to move
-                int nFrontBackMov = (int)(Math.sin(Math.toRadians(dAngle))*ticks);
-
+                int nFrontBackMov = (int)((Math.sin(Math.toRadians(dAngle))*revolutions)*robot.verticalWheelTicksPerRev);
+                Log.d("MOVEPID: ", "LeftRightMove: " + nLeftRightMov + ", FrontBackMove: " + nFrontBackMov);
                 // Takes the correction constant (dKP) and multiplies it by the deviation from the targetAngle to get the error.
-                double dHeading = robot.getWorldRotation();
+                double dHeading = GetYaw(0,robot.imu);
                 if (dHeading < 0) dHeading += 360;
 
                 if (targetAngle > 0) targetAngle = targetAngle%360;
@@ -98,13 +108,16 @@ public class AutoFunctions {
                 }
                 //get the total rotational error
                 double dError = FunctionLibrary.WrapAngleDegrees(dHeading - targetAngle);
+                Log.d("dError: ", "" + dError);
                 //multiply the error by dKP value to get rotational correction
                 dError = dError * robot.getdKp();
                 //feed the move function in the robotConstructor the x, y, and z movement
                 robot.move(-nFrontBackMov,nLeftRightMov, dError,power);
 
-                set_drive_encoders(DcMotor.RunMode.RUN_TO_POSITION);
-                if (check_drive_encoders(100)) {
+                double x = robot.horizontalEncoder.getCurrentPosition();
+                double y = robot.verticalEncoder.getCurrentPosition();
+                if (nLeftRightMov > 100 && Math.abs(x-nLeftRightMov) < 100 && nFrontBackMov > 100
+                && Math.abs(y-nFrontBackMov) < 100) {
                     //stop all of the motors
                     for (DcMotor motor : robot.getDriveMotors())  {
                         motor.setPower(0);

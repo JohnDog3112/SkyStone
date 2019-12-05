@@ -21,7 +21,7 @@ public class Odometry implements Runnable {
             robot.updateOdometry();
             try {
                 //pause for 50 ms to prevent overloading of CPU runtime
-                Thread.sleep(50);
+                Thread.sleep(robot.odometryUpdateRate);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

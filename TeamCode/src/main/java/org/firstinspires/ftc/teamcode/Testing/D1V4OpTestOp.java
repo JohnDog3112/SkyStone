@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.Testing;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -77,14 +79,23 @@ public class D1V4OpTestOp extends LinearOpMode {
 
             telemetry.update();
         }
-        while (opModeIsActive()) {
-            auto.gotoPosition(new FunctionLibrary.Point(0,0), 1, 0,0);
+        double result = 0;
+        while (opModeIsActive() && result != -1) {
+            result = auto.gotoPosition(new FunctionLibrary.Point(0,0), 1, 1);
+
             double x = robot.getX();
             double y = robot.getY();
             telemetry.addData("x:", x);
             telemetry.addData("y: ", y);
             telemetry.addData("distance: ", Math.sqrt((y*y) + (x*x)));
+            telemetry.addData("rotation", robot.getWorldRotation());
             telemetry.update();
+        }
+        while (opModeIsActive()) {
+            double rotation = robot.getWorldRotation();
+            FunctionLibrary.Point position = robot.getPosition();
+            if (rotation > 10) {
+            }
         }
     }
 }
